@@ -1,89 +1,3 @@
---[[
-
-=====================================================================
-==================== READ THIS BEFORE CONTINUING ====================
-=====================================================================
-========                                    .-----.          ========
-========         .----------------------.   | === |          ========
-========         |.-""""""""""""""""""-.|   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||   KICKSTART.NVIM   ||   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||                    ||   |-----|          ========
-========         ||:Tutor              ||   |:::::|          ========
-========         |'-..................-'|   |____o|          ========
-========         `"")----------------(""`   ___________      ========
-========        /::::::::::|  |::::::::::\  \ no mouse \     ========
-========       /:::========|  |==hjkl==:::\  \ required \    ========
-========      '""""""""""""'  '""""""""""""'  '""""""""""'   ========
-========                                                     ========
-=====================================================================
-=====================================================================
-
-What is Kickstart?
-
-  Kickstart.nvim is *not* a distribution.
-
-  Kickstart.nvim is a starting point for your own configuration.
-    The goal is that you can read every line of code, top-to-bottom, understand
-    what your configuration is doing, and modify it to suit your needs.
-
-    Once you've done that, you can start exploring, configuring and tinkering to
-    make Neovim your own! That might mean leaving Kickstart just the way it is for a while
-    or immediately breaking it into modular pieces. It's up to you!
-
-    If you don't know anything about Lua, I recommend taking some time to read through
-    a guide. One possible example which will only take 10-15 minutes:
-      - https://learnxinyminutes.com/docs/lua/
-
-    After understanding a bit more about Lua, you can use `:help lua-guide` as a
-    reference for how Neovim integrates Lua.
-    - :help lua-guide
-    - (or HTML version): https://neovim.io/doc/user/lua-guide.html
-
-Kickstart Guide:
-
-  TODO: The very first thing you should do is to run the command `:Tutor` in Neovim.
-
-    If you don't know what this means, type the following:
-      - <escape key>
-      - :
-      - Tutor
-      - <enter key>
-
-    (If you already know the Neovim basics, you can skip this step.)
-
-  Once you've completed that, you can continue working through **AND READING** the rest
-  of the kickstart init.lua.
-
-  Next, run AND READ `:help`.
-    This will open up a help window with some basic information
-    about reading, navigating and searching the builtin help documentation.
-
-    This should be the first place you go to look when you're stuck or confused
-    with something. It's one of my favorite Neovim features.
-
-    MOST IMPORTANTLY, we provide a keymap "<space>sh" to [s]earch the [h]elp documentation,
-    which is very useful when you're not exactly sure of what you're looking for.
-
-  I have left several `:help X` comments throughout the init.lua
-    These are hints about where to find more information about the relevant settings,
-    plugins or Neovim features used in Kickstart.
-
-   NOTE: Look for lines like this
-
-    Throughout the file. These are for you, the reader, to help you understand what is happening.
-    Feel free to delete them once you know what you're doing, but they should serve as a guide
-    for when you are first encountering a few different constructs in your Neovim config.
-
-If you experience any errors while trying to install kickstart, run `:checkhealth` for more info.
-
-I hope you enjoy your Neovim journey,
-- TJ
-
-P.S. You can delete this when you're done too. It's your config now! :)
---]]
-
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
@@ -254,6 +168,91 @@ vim.keymap.set('n', '<leader>u', require('undotree').toggle, { noremap = true, s
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
+
+  -- Rubocop
+  {
+    'jose-elias-alvarez/null-ls.nvim',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    config = function()
+      local null_ls = require 'null-ls'
+
+      null_ls.setup {
+        sources = {
+          null_ls.builtins.diagnostics.rubocop, -- RuboCop as a linter
+          null_ls.builtins.formatting.rubocop, -- RuboCop as a formatter
+        },
+      }
+    end,
+  },
+
+  {
+    'github/copilot.vim',
+    event = 'InsertEnter', -- Load plugin on insert mode
+    config = function()
+      -- Optional: Customize Copilot settings here
+      vim.g.copilot_no_tab_map = true -- Disable default `<Tab>` mapping
+      vim.api.nvim_set_keymap('i', '<C-J>', 'copilot#Accept("<CR>")', { expr = true, silent = true })
+    end,
+  },
+  {
+    'CopilotC-Nvim/CopilotChat.nvim',
+    branch = 'canary',
+    dependencies = {
+      { 'github/copilot.vim' }, -- or zbirenbaum/copilot.lua
+      { 'nvim-lua/plenary.nvim' }, -- for curl, log wrapper
+    },
+    build = 'make tiktoken', -- Only on MacOS or Linux
+    opts = {
+      -- See Configuration section for options
+    },
+    event = 'VeryLazy',
+    keys = {
+      { '<leader>ccb', ':CopilotChatBuffer ', desc = 'CopilotChat - Chat with current buffer' },
+      { '<leader>cce', '<cmd>CopilotChatExplain<cr>', desc = 'CopilotChat - Explain code' },
+      { '<leader>cct', '<cmd>CopilotChatTests<cr>', desc = 'CopilotChat - Generate tests' },
+      {
+        '<leader>ccT',
+        '<cmd>CopilotChatVsplitToggle<cr>',
+        desc = 'CopilotChat - Toggle Vsplit', -- Toggle vertical split
+      },
+      {
+        '<leader>ccv',
+        ':CopilotChatVisual ',
+        mode = 'x',
+        desc = 'CopilotChat - Open in vertical split',
+      },
+      {
+        '<leader>ccx',
+        ':CopilotChatInPlace<cr>',
+        mode = 'x',
+        desc = 'CopilotChat - Run in-place code',
+      },
+      {
+        '<leader>ccf',
+        '<cmd>CopilotChatFixDiagnostic<cr>', -- Get a fix for the diagnostic message under the cursor.
+        desc = 'CopilotChat - Fix diagnostic',
+      },
+      {
+        '<leader>ccr',
+        '<cmd>CopilotChatReset<cr>', -- Reset chat history and clear buffer.
+        desc = 'CopilotChat - Reset chat history and clear buffer',
+      },
+    },
+    -- See Commands section for default commands if you want to lazy load on them
+  },
+
+  {
+    'rmagatti/auto-session',
+    lazy = false,
+
+    -- enables autocomplete for opts
+    -- @module "auto-session"
+    -- @type AutoSession.Config
+    opts = {
+      suppressed_dirs = { '~/', '~/Projects', '~/Downloads', '/' },
+      -- log_level = 'debug',
+  }
+}
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -572,6 +571,9 @@ require('lazy').setup({
           --  For example, in C this would take you to the header.
           map('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
 
+          -- Inspired from typecraft: show schema on hover
+          map('K', vim.lsp.buf.hover, 'Hover (Schema)')
+
           -- The following two autocommands are used to highlight references of the
           -- word under your cursor when your cursor rests there for a little while.
           --    See `:help CursorHold` for information about when this is executed
@@ -639,6 +641,7 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
+        ruby_lsp = {},
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
@@ -809,7 +812,7 @@ require('lazy').setup({
           -- Accept ([y]es) the completion.
           --  This will auto-import if your LSP supports it.
           --  This will expand snippets if the LSP sent a snippet.
-          ['<C-y>'] = cmp.mapping.confirm { select = true },
+          --          ['<C-y>'] = cmp.mapping.confirm { select = true },
 
           -- If you prefer more traditional completion keymaps,
           -- you can uncomment the following lines
@@ -1004,3 +1007,15 @@ require('neo-tree').setup {
     position = 'left',
   },
 }
+
+vim.api.nvim_create_user_command('TogglePaste', function()
+  if vim.o.paste then
+    vim.o.paste = false
+    print 'Paste mode disabled'
+  else
+    vim.o.paste = true
+    print 'Paste mode enabled'
+  end
+end, {})
+
+vim.keymap.set('n', '<F2>', ':TogglePaste<CR>', { noremap = true, silent = true })
