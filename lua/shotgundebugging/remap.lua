@@ -49,3 +49,5 @@ vim.api.nvim_set_keymap('n', '<leader>cf', ':let @+ = expand("%:p")<CR>', { nore
 --  expand('%:p'): Expands to the full path of the current file.
 --  @+: Refers to the system clipboard register.
 --  :let: Assigns the expanded path to the clipboard register.
+
+vim.api.nvim_set_keymap('i', '<Tab>', 'copilot#Accept("<Tab>")', { silent = true, expr = true })

@@ -169,22 +169,6 @@ require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
 
-  -- Rubocop
-  {
-    'jose-elias-alvarez/null-ls.nvim',
-    dependencies = { 'nvim-lua/plenary.nvim' },
-    config = function()
-      local null_ls = require 'null-ls'
-
-      null_ls.setup {
-        sources = {
-          null_ls.builtins.diagnostics.rubocop, -- RuboCop as a linter
-          null_ls.builtins.formatting.rubocop, -- RuboCop as a formatter
-        },
-      }
-    end,
-  },
-
   {
     'github/copilot.vim',
     event = 'InsertEnter', -- Load plugin on insert mode
@@ -207,26 +191,9 @@ require('lazy').setup({
     },
     event = 'VeryLazy',
     keys = {
-      { '<leader>ccb', ':CopilotChatBuffer ', desc = 'CopilotChat - Chat with current buffer' },
+      { '<leader>ccc', '<cmd>CopilotChatToggle<cr>', desc = 'CopilotChat - Toggle' },
       { '<leader>cce', '<cmd>CopilotChatExplain<cr>', desc = 'CopilotChat - Explain code' },
       { '<leader>cct', '<cmd>CopilotChatTests<cr>', desc = 'CopilotChat - Generate tests' },
-      {
-        '<leader>ccT',
-        '<cmd>CopilotChatVsplitToggle<cr>',
-        desc = 'CopilotChat - Toggle Vsplit', -- Toggle vertical split
-      },
-      {
-        '<leader>ccv',
-        ':CopilotChatVisual ',
-        mode = 'x',
-        desc = 'CopilotChat - Open in vertical split',
-      },
-      {
-        '<leader>ccx',
-        ':CopilotChatInPlace<cr>',
-        mode = 'x',
-        desc = 'CopilotChat - Run in-place code',
-      },
       {
         '<leader>ccf',
         '<cmd>CopilotChatFixDiagnostic<cr>', -- Get a fix for the diagnostic message under the cursor.
@@ -236,7 +203,7 @@ require('lazy').setup({
         '<leader>ccr',
         '<cmd>CopilotChatReset<cr>', -- Reset chat history and clear buffer.
         desc = 'CopilotChat - Reset chat history and clear buffer',
-      },
+      }
     },
     -- See Commands section for default commands if you want to lazy load on them
   },
@@ -251,8 +218,8 @@ require('lazy').setup({
     opts = {
       suppressed_dirs = { '~/', '~/Projects', '~/Downloads', '/' },
       -- log_level = 'debug',
-  }
-}
+    },
+  },
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
