@@ -170,6 +170,13 @@ require('lazy').setup({
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
 
   {
+    'numToStr/Comment.nvim',
+    opts = {
+      -- add any options here
+    },
+  },
+
+  {
     'github/copilot.vim',
     event = 'InsertEnter', -- Load plugin on insert mode
     config = function()
@@ -177,35 +184,6 @@ require('lazy').setup({
       vim.g.copilot_no_tab_map = true -- Disable default `<Tab>` mapping
       vim.api.nvim_set_keymap('i', '<C-J>', 'copilot#Accept("<CR>")', { expr = true, silent = true })
     end,
-  },
-  {
-    'CopilotC-Nvim/CopilotChat.nvim',
-    branch = 'canary',
-    dependencies = {
-      { 'github/copilot.vim' }, -- or zbirenbaum/copilot.lua
-      { 'nvim-lua/plenary.nvim' }, -- for curl, log wrapper
-    },
-    build = 'make tiktoken', -- Only on MacOS or Linux
-    opts = {
-      -- See Configuration section for options
-    },
-    event = 'VeryLazy',
-    keys = {
-      { '<leader>ccc', '<cmd>CopilotChatToggle<cr>', desc = 'CopilotChat - Toggle' },
-      { '<leader>cce', '<cmd>CopilotChatExplain<cr>', desc = 'CopilotChat - Explain code' },
-      { '<leader>cct', '<cmd>CopilotChatTests<cr>', desc = 'CopilotChat - Generate tests' },
-      {
-        '<leader>ccf',
-        '<cmd>CopilotChatFixDiagnostic<cr>', -- Get a fix for the diagnostic message under the cursor.
-        desc = 'CopilotChat - Fix diagnostic',
-      },
-      {
-        '<leader>ccr',
-        '<cmd>CopilotChatReset<cr>', -- Reset chat history and clear buffer.
-        desc = 'CopilotChat - Reset chat history and clear buffer',
-      }
-    },
-    -- See Commands section for default commands if you want to lazy load on them
   },
 
   {
@@ -559,6 +537,10 @@ require('lazy').setup({
               buffer = event.buf,
               group = highlight_augroup,
               callback = vim.lsp.buf.clear_references,
+            })
+
+            vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter' }, {
+              command = 'checktime',
             })
 
             vim.api.nvim_create_autocmd('LspDetach', {

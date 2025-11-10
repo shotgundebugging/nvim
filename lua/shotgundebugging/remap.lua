@@ -1,3 +1,5 @@
+require 'shotgundebugging.options'
+
 -- Move blocks
 vim.keymap.set('v', 'J', ":m '>+1<CR>gv=gv")
 vim.keymap.set('v', 'K', ":m '<-2<CR>gv=gv")
@@ -39,6 +41,14 @@ vim.keymap.set('n', '<leader><leader>', builtin.oldfiles, {})
 -- Diagnostics
 vim.api.nvim_set_keymap('n', '[d', '<cmd>lua vim.diagnostic.goto_prev()<CR>', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', ']d', '<cmd>lua vim.diagnostic.goto_next()<CR>', { noremap = true, silent = true })
+vim.keymap.set('n', '<leader>af', function()
+  local lnum = vim.api.nvim_win_get_cursor(0)[1] - 1
+  local diags = vim.diagnostic.get(0, { lnum = lnum })
+  vim.lsp.buf.code_action {
+    context = { diagnostics = diags },
+    apply = true,
+  }
+end, { desc = 'Apply single fix for diagnostic under cursor' })
 
 -- RuboCop
 vim.keymap.set('n', '<leader>rb', vim.lsp.buf.format, { desc = 'Format code with RuboCop' })
@@ -50,4 +60,14 @@ vim.api.nvim_set_keymap('n', '<leader>cf', ':let @+ = expand("%:p")<CR>', { nore
 --  @+: Refers to the system clipboard register.
 --  :let: Assigns the expanded path to the clipboard register.
 
-vim.api.nvim_set_keymap('i', '<Tab>', 'copilot#Accept("<Tab>")', { silent = true, expr = true })
+vim.g.copilot_no_tab_map = true
+-- Tab accepts Copilot suggestion; otherwise behaves like a normal Tab
+-- (respects expandtab/softtabstop so it indents by spaces if configured)
+vim.keymap.set('i', '<Tab>', function()
+  -- Accept Copilot if available, else insert a real Tab
+  local ok = vim.fn['copilot#Accept']()
+  if ok ~= '' then
+    return ok
+  end
+  return vim.api.nvim_replace_termcodes('<Tab>', true, false, true)
+end, { expr = true, silent = true, replace_keycodes = false })
