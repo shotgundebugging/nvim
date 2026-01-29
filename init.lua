@@ -7,6 +7,28 @@ vim.g.maplocalleader = ' '
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
 
+-- Compatibility shim for plugins expecting vim.treesitter.ft_to_lang (pre-0.10 API).
+local function ensure_ts_ft_to_lang()
+  if vim.treesitter == nil then
+    local ok, ts = pcall(require, 'vim.treesitter')
+    vim.treesitter = (ok and ts) or {}
+  end
+  if vim.treesitter.ft_to_lang == nil then
+    vim.treesitter.ft_to_lang = function(ft)
+      local lang_get = vim.treesitter.language and vim.treesitter.language.get_lang
+      if lang_get then
+        return lang_get(ft)
+      end
+      return nil
+    end
+  end
+end
+ensure_ts_ft_to_lang()
+vim.schedule(ensure_ts_ft_to_lang)
+vim.api.nvim_create_autocmd({ 'VimEnter', 'FileType' }, {
+  callback = ensure_ts_ft_to_lang,
+})
+
 -- [[ Setting options ]]
 -- See `:help vim.opt`
 -- NOTE: You can change these options as you wish!
@@ -141,49 +163,42 @@ vim.opt.rtp:prepend(lazypath)
 --    :Lazy update
 --
 -- NOTE: Here is where you install your plugins.
--- UndoTree
-local undotree = require 'undotree'
-
-undotree.setup {
-  float_diff = true, -- using float window previews diff, set this `true` will disable layout option
-  layout = 'left_bottom', -- "left_bottom", "left_left_bottom"
-  position = 'left', -- "right", "bottom"
-  ignore_filetype = { 'undotree', 'undotreeDiff', 'qf', 'TelescopePrompt', 'spectre_panel', 'tsplayground' },
-  window = {
-    winblend = 30,
-  },
-  keymaps = {
-    ['j'] = 'move_next',
-    ['k'] = 'move_prev',
-    ['gj'] = 'move2parent',
-    ['J'] = 'move_change_next',
-    ['K'] = 'move_change_prev',
-    ['<cr>'] = 'action_enter',
-    ['p'] = 'enter_diffbuf',
-    ['q'] = 'quit',
-  },
-}
-vim.keymap.set('n', '<leader>u', require('undotree').toggle, { noremap = true, silent = true })
-
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
+
+  {
+    'jiaoshijie/undotree',
+    config = function()
+      local undotree = require 'undotree'
+      undotree.setup {
+        float_diff = true, -- using float window previews diff, set this `true` will disable layout option
+        layout = 'left_bottom', -- "left_bottom", "left_left_bottom"
+        position = 'left', -- "right", "bottom"
+        ignore_filetype = { 'undotree', 'undotreeDiff', 'qf', 'TelescopePrompt', 'spectre_panel', 'tsplayground' },
+        window = {
+          winblend = 30,
+        },
+        keymaps = {
+          ['j'] = 'move_next',
+          ['k'] = 'move_prev',
+          ['gj'] = 'move2parent',
+          ['J'] = 'move_change_next',
+          ['K'] = 'move_change_prev',
+          ['<cr>'] = 'action_enter',
+          ['p'] = 'enter_diffbuf',
+          ['q'] = 'quit',
+        },
+      }
+      vim.keymap.set('n', '<leader>u', undotree.toggle, { noremap = true, silent = true })
+    end,
+  },
 
   {
     'numToStr/Comment.nvim',
     opts = {
       -- add any options here
     },
-  },
-
-  {
-    'github/copilot.vim',
-    event = 'InsertEnter', -- Load plugin on insert mode
-    config = function()
-      -- Optional: Customize Copilot settings here
-      vim.g.copilot_no_tab_map = true -- Disable default `<Tab>` mapping
-      vim.api.nvim_set_keymap('i', '<C-J>', 'copilot#Accept("<CR>")', { expr = true, silent = true })
-    end,
   },
 
   {
@@ -325,6 +340,21 @@ require('lazy').setup({
       { 'nvim-tree/nvim-web-devicons', enabled = true },
     },
     config = function()
+      -- Compatibility for older nvim-treesitter that doesn't expose parsers.ft_to_lang.
+      do
+        local ok_parsers, ts_parsers = pcall(require, 'nvim-treesitter.parsers')
+        if ok_parsers and type(ts_parsers) == 'table' and ts_parsers.ft_to_lang == nil then
+          local ts_lang = vim.treesitter and vim.treesitter.language or nil
+          if ts_lang and type(ts_lang.get_lang) == 'function' then
+            ts_parsers.ft_to_lang = ts_lang.get_lang
+          else
+            ts_parsers.ft_to_lang = function(ft)
+              return ft
+            end
+          end
+        end
+      end
+
       -- Telescope is a fuzzy finder that comes with a lot of different things that
       -- it can fuzzy find! It's more than just a "file finder", it can search
       -- many different aspects of Neovim, your workspace, LSP, and more!
@@ -350,11 +380,14 @@ require('lazy').setup({
         -- You can put your default mappings / updates / etc. in here
         --  All the info you're looking for is in `:help telescope.setup()`
         --
-        -- defaults = {
-        --   mappings = {
-        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-        --   },
-        -- },
+        defaults = {
+          preview = {
+            treesitter = false,
+          },
+          -- mappings = {
+          --   i = { ['<c-enter>'] = 'to_fuzzy_refine' },
+          -- },
+        },
         -- pickers = {}
         extensions = {
           ['ui-select'] = {
