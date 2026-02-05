@@ -202,6 +202,65 @@ require('lazy').setup({
   },
 
   {
+    'ThePrimeagen/harpoon',
+    branch = 'harpoon2',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    config = function()
+      local harpoon = require 'harpoon'
+
+      -- REQUIRED
+      harpoon:setup()
+      -- REQUIRED
+
+      local function map_if_free(lhs, rhs, desc)
+        if vim.fn.mapcheck(lhs, 'n') == '' then
+          vim.keymap.set('n', lhs, rhs, { desc = desc })
+          return true
+        end
+        return false
+      end
+
+      local function map_pref(primary, fallback, rhs, desc)
+        if not map_if_free(primary, rhs, desc) and fallback then
+          map_if_free(fallback, rhs, desc)
+        end
+      end
+
+      map_pref('<leader>a', '<leader>ha', function()
+        harpoon:list():add()
+      end, 'Harpoon add')
+
+      map_pref('<C-e>', '<leader>hm', function()
+        harpoon.ui:toggle_quick_menu(harpoon:list())
+      end, 'Harpoon menu')
+
+      map_pref('<C-a>', '<leader>1', function()
+        harpoon:list():select(1)
+      end, 'Harpoon 1')
+
+      map_pref('<C-s>', '<leader>2', function()
+        harpoon:list():select(2)
+      end, 'Harpoon 2')
+
+      map_pref('<C-d>', '<leader>3', function()
+        harpoon:list():select(3)
+      end, 'Harpoon 3')
+
+      map_pref('<C-f>', '<leader>4', function()
+        harpoon:list():select(4)
+      end, 'Harpoon 4')
+
+      map_pref('<C-p>', '<leader>[', function()
+        harpoon:list():prev()
+      end, 'Harpoon prev')
+
+      map_pref('<C-n>', '<leader>]', function()
+        harpoon:list():next()
+      end, 'Harpoon next')
+    end,
+  },
+
+  {
     'rmagatti/auto-session',
     lazy = false,
 
